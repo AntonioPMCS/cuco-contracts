@@ -21,6 +21,14 @@ contract CuCoBlockchain is Ownable {
     event DeviceAdded(uint256 customerId, address device);
     event UserAdded(uint256 customerId, address user);
 
+     /**
+     * Check if a user has access to a given customer or any of its parent customers.
+     */
+    modifier onlyAncestorAdmin (address user, uint256 customerId ) {
+         require(_hasAccess(msg.sender, customerId), "Unauthorized: Only ancestor admins can create customers");
+        _;
+    }
+
     constructor() Ownable(msg.sender) {
         // Create Root customer
         customers[0].id = customerCount;
@@ -34,7 +42,7 @@ contract CuCoBlockchain is Ownable {
     /**
      * Create a new customer under a parent customer and assign an initial admin user.
      */
-    function createCustomer(uint256 parentId, address adminUser) public onlyOwner returns (uint256) {
+    function createCustomer(uint256 parentId, address adminUser) public onlyAncestorAdmin(msg.sender, parentId) returns (uint256) {
         require(customers[parentId].exists, "Parent customer does not exist");
 
         customerCount++;
@@ -53,9 +61,9 @@ contract CuCoBlockchain is Ownable {
     /**
      * Assign a user to a customer.
      */
-    function addUserToCustomer(uint256 customerId, address user) public {
+
+    function addUserToCustomer(uint256 customerId, address user) public onlyAncestorAdmin(msg.sender, customerId) {
         require(customers[customerId].exists, "Customer does not exist");
-        require(_hasAccess(msg.sender, customerId), "Unauthorized");
 
         customers[customerId].authorizedUsers[user] = true;
         emit UserAdded(customerId, user);
@@ -64,9 +72,8 @@ contract CuCoBlockchain is Ownable {
     /**
      * Assign a device to a customer.
      */
-    function addDeviceToCustomer(uint256 customerId, address device) public {
+    function addDeviceToCustomer(uint256 customerId, address device) onlyAncestorAdmin(msg.sender, customerId) public {
         require(customers[customerId].exists, "Customer does not exist");
-        require(_hasAccess(msg.sender, customerId), "Unauthorized");
 
         customers[customerId].devices.push(device);
         emit DeviceAdded(customerId, device);
@@ -75,9 +82,8 @@ contract CuCoBlockchain is Ownable {
     /**
      * Get all devices managed by a customer (including child customers).
      */
-    function getDevicesUnderCustomer(uint256 customerId) public view returns (address[] memory) {
+    function getDevicesUnderCustomer(uint256 customerId) onlyAncestorAdmin(msg.sender, customerId) public view returns (address[] memory) {
         require(customers[customerId].exists, "Customer does not exist");
-        require(_hasAccess(msg.sender, customerId), "Unauthorized");
 
         return _gatherDevices(customerId);
     }
@@ -113,16 +119,19 @@ contract CuCoBlockchain is Ownable {
         return result;
     }
 
+
     /**
-     * Check if a user has access to a given customer or any of its parent customers.
-     */
+    * Modifier helper function to check if a user has access to any ancestor.
+    */
     function _hasAccess(address user, uint256 customerId) internal view returns (bool) {
         while (customerId != 0) {
             if (customers[customerId].authorizedUsers[user]) {
                 return true;
             }
-            customerId = customers[customerId].parentId;
+            customerId = customers[customerId].parentId; // Move up the hierarchy
         }
+        if (customers[customerId].authorizedUsers[user]) return true;
         return false;
     }
+
 }

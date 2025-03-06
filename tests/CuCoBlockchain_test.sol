@@ -20,16 +20,18 @@ contract CuCoBlockchainTest is CuCoBlockchain {
     /// Define variables referring to different accounts
     address acc0;
     address acc1;
+    address acc2;
 
     function beforeAll() public {
-        // <instantiate contract>
         acc0 = TestsAccounts.getAccount(0);
         acc1 = TestsAccounts.getAccount(1);
+        acc2 = TestsAccounts.getAccount(2);
     }
 
-    /// #sender: account-0
     function checkDeploymentSuccess() public {
-        Assert.equal(owner(), acc0, 'Owner should be deployer');
+        Assert.ok(customers[0].authorizedUsers[acc0], "Deployer should be authorized user of Root customer");
+        Assert.equal(owner(), acc0, "Owner should be the deployer");
+
     }
 
     function createCustomerSuccess() public {
@@ -46,8 +48,11 @@ contract CuCoBlockchainTest is CuCoBlockchain {
         Assert.ok(!(customers[2].exists), "Customer exists but it should not");
     }
 
-    function createCustomerOnChild() public {
-        
+    /// #sender: account-0
+    function createCustomerOnChildSuccess() public {
+        createCustomer(1, acc2);
+        console.log("Customer created OK");
+        Assert.ok(customers[2].exists, "Customer should exist");
     }
 
     function checkSuccess() public {
@@ -62,10 +67,6 @@ contract CuCoBlockchainTest is CuCoBlockchain {
         return true;
     }
     
-    function checkFailure() public {
-        Assert.notEqual(uint(1), uint(1), "1 should not be equal to 1");
-    }
-
     /// Custom Transaction Context: https://remix-ide.readthedocs.io/en/latest/unittesting.html#customization
     /// #sender: account-1
     /// #value: 100
