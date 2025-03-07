@@ -20,12 +20,13 @@ contract CuCoBlockchain is Ownable {
     event CustomerCreated(uint256 customerId, uint256 parentId);
     event DeviceAdded(uint256 customerId, address device);
     event UserAdded(uint256 customerId, address user);
+    event UserRemoved(uint256 customerId, address user);
 
      /**
      * Check if a user has access to a given customer or any of its parent customers.
      */
     modifier onlyAncestorAdmin (address user, uint256 customerId ) {
-         require(_hasAccess(msg.sender, customerId), "Unauthorized: Only ancestor admins can create customers");
+         require(_hasAccess(user, customerId), "Unauthorized: Only admins can create customers");
         _;
     }
 
@@ -69,6 +70,12 @@ contract CuCoBlockchain is Ownable {
         emit UserAdded(customerId, user);
     }
 
+    function removeUserFromCustomer(uint256 customerId, address user) public onlyAncestorAdmin(msg.sender, customerId) {
+        require(customers[customerId].exists, "Customer does not exist");
+
+        customers[customerId].authorizedUsers[user] = false;
+        emit UserRemoved(customerId, user);
+    }
     /**
      * Assign a device to a customer.
      */

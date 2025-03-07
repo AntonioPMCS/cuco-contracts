@@ -14,7 +14,7 @@ import "hardhat/console.sol";
 
 // Using inheritance in testing is needed to have msg.sender and msg.value work as expected
 // When using inheritance, it is not needed to instantiate the contract
-contract CuCoBlockchainTest is CuCoBlockchain {
+contract CuCoBlockchainCustomerTest is CuCoBlockchain {
 
     CuCoBlockchain cuco;
     /// Define variables referring to different accounts
@@ -49,10 +49,21 @@ contract CuCoBlockchainTest is CuCoBlockchain {
     }
 
     /// #sender: account-0
-    function createCustomerOnChildSuccess() public {
+    function createCustomerOnDirectChildSuccess() public {
         createCustomer(1, acc2);
-        console.log("Customer created OK");
         Assert.ok(customers[2].exists, "Customer should exist");
+    }
+
+    /// #sender: account-1
+    function createCustomerOnDirectChildSuccess2() public {
+        createCustomer(2, acc2);
+        Assert.ok(customers[3].exists, "Customer should exist");
+    }
+
+    /// #sender: account-1
+    function createCustomerOnChildSuccess() public {
+        createCustomer(3, acc2);
+        Assert.ok(customers[4].exists, "Customer should exist");
     }
 
     function checkSuccess() public {
@@ -76,4 +87,3 @@ contract CuCoBlockchainTest is CuCoBlockchain {
         Assert.equal(msg.value, 100, "Invalid value");
     }
 }
-    
